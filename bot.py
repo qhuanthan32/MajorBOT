@@ -244,6 +244,33 @@ def get_squad(token):
         print(f'Error making request: {e}')
         return None
 
+def claim_coins(token):
+    url = 'https://major.glados.app/api/bonuses/coins/'
+    coins = random.randint(585, 600)
+    payload = {"coins":coins}
+    headers['Authorization'] = f"Bearer {token}"
+
+    response = requests.post(url, headers=headers, json=payload)
+    try:
+        response_codes_done = range(200, 211)
+        response_code_failed = range(500, 530)
+        response_code_notfound = range(400, 410)
+        if response.status_code in response_codes_done:
+            jsons = response.json()
+            if jsons.get('success') == True:
+                print(f"Success Claim {coins} Coins ")
+            return response.json()
+        elif response.status_code in response_code_failed:
+            print(response.text)
+            return None
+        elif response.status_code in response_code_notfound:
+            return None
+        else:
+            raise Exception(f'Unexpected status code: {response.status_code}')
+    except requests.exceptions.RequestException as e:
+        print(f'Error making request: {e}')
+        return None
+
 def main():
     while True:
         queries = load_credentials()
@@ -281,31 +308,32 @@ def main():
                 data_visit = visit(token)
                 if data_visit is not None:
                     print(f"Login Streak : {data_visit.get('streak')}")
-                    time.sleep(2)
+                    time.sleep(1)
                 
+                claim_coins(token)
+                
+                time.sleep(1)
 
                 print("Spin Roulette")
                 data_roulette = roulette(token)
                 if data_roulette is not None:
+                    time.sleep(3)
                     reward = data_roulette.get('rating_award')
                     if reward is not None:
                         print(f"Reward Roulette : {data_roulette.get('rating_award')}")
-                    else:
-                        print("Reward Roulette Claimed....")
-                time.sleep(3)
+                else:
+                    print("Reward Roulette Claimed....")
+                
                 print('Get daily Task')
                 data_daily = getdaily(token)
                 if data_daily is not None:
                     if len(data_daily) > 0:
-                        if len(data_daily) > 3:
-                            elements = data_daily.pop(4)
-                            data_daily.insert(0, elements)
-                        for daily in data_daily:
+                        for daily in reversed(data_daily):
                             id = daily.get('id')
-                            time.sleep(2)
-                            data_done = donetask(token, id)
                             title = daily.get('title')
-                            if title not in ["Donate rating", "Invite more Friends", "Boost channel"]:
+                            if title not in ["Donate rating", "Invite more Friends", "Boost Major channel", "TON Transaction"]:
+                                time.sleep(2)
+                                data_done = donetask(token, id)
                                 if data_done is not None:
                                     print(f"Task : {daily.get('title')} | Reward : {daily.get('award')} | Status: {data_done.get('is_completed')}")
                     else:
