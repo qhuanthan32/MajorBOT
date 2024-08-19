@@ -271,6 +271,28 @@ def claim_coins(token):
         print(f'Error making request: {e}')
         return None
 
+def get_detail(token, tgid):
+    url = f'https://major.glados.app/api/users/{tgid}/'
+    headers['Authorization'] = f"Bearer {token}"
+    response = requests.get(url, headers=headers)
+    try:
+        response_codes_done = range(200, 211)
+        response_code_failed = range(500, 530)
+        response_code_notfound = range(400, 410)
+        if response.status_code in response_codes_done:
+            return response.json()
+        elif response.status_code in response_code_failed:
+            print(response.text)
+            return None
+        elif response.status_code in response_code_notfound:
+            print('failed get coins')
+            return None
+        else:
+            raise Exception(f'Unexpected status code: {response.status_code}')
+    except requests.exceptions.RequestException as e:
+        print(f'Error making request: {e}')
+        return None
+
 def main():
     while True:
         queries = load_credentials()
@@ -286,8 +308,13 @@ def main():
                 token = data_auth.get('access_token')
                 user = data_auth.get('user')
                 ratings = user.get('rating')
+                id = user.get('id')
                 squad_id = user.get('squad_id')
-                print(squad_id)
+                time.sleep(2)
+                detail = get_detail(token, id)
+                if detail is not None:
+                    ratings = detail.get('rating', 0)
+                    
                 print(f"TGID : {user.get('id')} | Name : {user.get('first_name')} {user.get('last_name')} | point : {ratings}")
 
                 time.sleep(2)
