@@ -180,7 +180,7 @@ def donate(token, amount):
         return None
 
 def roulette(token):
-    url ='https://major.glados.app/api/roulette?'
+    url ='https://major.glados.app/api/roulette/'
     headers['Authorization'] = f"Bearer {token}"
 
     response = requests.post(url, headers=headers)
