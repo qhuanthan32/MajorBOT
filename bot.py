@@ -60,7 +60,7 @@ def postauth(query):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
-            print_(response)
+            print_(response.text)
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -82,6 +82,7 @@ def getdaily(token):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
+            print_(response.text)
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -93,19 +94,24 @@ def gettask(token):
     url ='https://major.glados.app/api/tasks/?is_daily=false'
     headers['Authorization'] = f"Bearer {token}"
     try:
-        response_codes_done = range(200, 211)
-        response_code_failed = range(500, 530)
-        response_code_notfound = range(400, 410)
-        response = requests.get(url, headers=headers)
-        if response.status_code in response_codes_done:
-            return response.json()
-        elif response.status_code in response_code_failed:
-            print_(response.text)
-            return None
-        elif response.status_code in response_code_notfound:
-            return None
-        else:
-            raise Exception(f'Unexpected status code: {response.status_code}')
+        trys = 3
+        while True:
+            time.sleep(2)
+            response_codes_done = range(200, 211)
+            response_code_failed = range(500, 530)
+            response_code_notfound = range(400, 410)
+            response = requests.get(url, headers=headers)
+            if response.status_code in response_codes_done:
+                return response.json()
+            elif response.status_code in response_code_failed:
+                print_(response.text)
+
+            elif response.status_code in response_code_notfound:
+                print_(response.text)
+                return None
+            else:
+                raise Exception(f'Unexpected status code: {response.status_code}')
+            trys -= 1
     except requests.exceptions.RequestException as e:
         print_(f'Error making request: {e}')
         return None
@@ -127,6 +133,7 @@ def donetask(token, id):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
+            print_(response.text)
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -148,6 +155,7 @@ def visit(token):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
+            print_(response.text)
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -172,6 +180,7 @@ def donate(token, amount):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
+            print_(response.text)
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -194,6 +203,11 @@ def roulette(token):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
+            jsons = response.json()
+            detail = jsons.get('detail')
+            blocked_until = detail.get('blocked_until')
+            converted = convert_time(blocked_until)
+            print_(f'failed get coins')
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -216,6 +230,7 @@ def join_squad(token):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
+            print_(response.text)
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -238,6 +253,7 @@ def get_squad(token):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
+            print_(response.text)
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -265,7 +281,11 @@ def claim_coins(token):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
-            print_('failed get coins')
+            jsons = response.json()
+            detail = jsons.get('detail')
+            blocked_until = detail.get('blocked_until')
+            converted = convert_time(blocked_until)
+            print_(f'failed get coins')
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -293,7 +313,11 @@ def swipe_coin(token):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
-            print_('failed get coins')
+            jsons = response.json()
+            detail = jsons.get('detail')
+            blocked_until = detail.get('blocked_until')
+            converted = convert_time(blocked_until)
+            print_(f'failed get coins')
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -315,7 +339,7 @@ def get_detail(token, tgid):
             print_(response.text)
             return None
         elif response.status_code in response_code_notfound:
-            print_('failed get coins')
+            print_(response.text)
             return None
         else:
             raise Exception(f'Unexpected status code: {response.status_code}')
@@ -327,9 +351,17 @@ def print_(word):
     now = datetime.now().isoformat(" ").split(".")[0]
     print(f"[{now}] {word}")
 
+def convert_time(unix_time):
+    formatted_time = time.strftime("%H:%M:%S", time.gmtime(unix_time))
+    return formatted_time
+
 def main():
     while True:
+        majors = 0
+        delay_time = random.randint(29400, 29700)
+        start_time = time.time()
         queries = load_credentials()
+        sum = len(queries)
         for index, query in enumerate(queries):
             useragent = getuseragent(index)
             headers['User-Agent'] = useragent
@@ -349,6 +381,7 @@ def main():
                 if detail is not None:
                     ratings = detail.get('rating', 0)
                 print_(f"TGID : {user.get('id')} | Name : {user.get('first_name')} {user.get('last_name')} | point : {ratings}")
+                majors += ratings
 
                 time.sleep(2)
                 if squad_id == None:
@@ -383,9 +416,7 @@ def main():
                     time.sleep(3)
                     reward = data_roulette.get('rating_award')
                     if reward is not None:
-                        print_(f"Reward Roulette : {data_roulette.get('rating_award')}")
-                else:
-                    print_("Reward Roulette Claimed....")
+                        print_(f"Success Reward Roulette : {data_roulette.get('rating_award')}")
                 
                 print_('Get daily Task')
                 data_daily = getdaily(token)
@@ -435,9 +466,13 @@ def main():
                 #         print_(f"Donate amount {amount}")
             else:
                 print_('User Not Found')
-        delay = random.randint(27800, 28100)
-        print_delay(delay)
-        time.sleep(delay)
+        end_time = time.time()
+        total_time = delay_time - (end_time-start_time)
+        print_(" ======================================================")
+        print_(f"Total Account : {sum} | Total Ratings Majors: {majors}")
+        print_(" ======================================================")
+        print_delay(total_time)
+        time.sleep(total_time)
 
 def print_delay(delay):
     now = datetime.now().isoformat(" ").split(".")[0]
