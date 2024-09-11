@@ -347,6 +347,41 @@ def get_detail(token, tgid):
         print_(f'Error making request: {e}')
         return None
 
+def durev_combo(token, payload):
+    url = 'https://major.bot/api/durov/'
+    headers['Authorization'] = f"Bearer {token}"
+
+    response = requests.post(url, headers=headers, json=payload)
+    try:
+        response_codes_done = range(200, 211)
+        response_code_failed = range(500, 530)
+        response_code_notfound = range(400, 410)
+        if response.status_code in response_codes_done:
+            data = response.json()
+            correct = data.get('correct',[])
+            ds = len(correct)
+            if ds == 4:
+                print_(f'Combo Done !! Reward 5000')
+            else:
+                print_(f'Combo Failed !! combo : {correct}')
+                
+            return response.json()
+        elif response.status_code in response_code_failed:
+            print_(response.text)
+            return None
+        elif response.status_code in response_code_notfound:
+            jsons = response.json()
+            detail = jsons.get('detail')
+            blocked_until = detail.get('blocked_until')
+            converted = convert_time(blocked_until)
+            print_(f'failed get coins')
+            return None
+        else:
+            raise Exception(f'Unexpected status code: {response.status_code}')
+    except requests.exceptions.RequestException as e:
+        print_(f'Error making request: {e}')
+        return None
+
 def print_(word):
     now = datetime.now().isoformat(" ").split(".")[0]
     print(f"[{now}] {word}")
@@ -480,5 +515,50 @@ def print_delay(delay):
     minutes, sec = divmod(remainder, 60)
     print(f"{now} | Waiting Time: {hours} hours, {minutes} minutes, and {sec} seconds")
 
+def quest_main():
+    queries = load_credentials()
+    input_string = input("input number (ex:14,2,3,4) : ").strip().lower()
+    input_data = [int(x) for x in input_string.split(",")]
+    payload = {"choice_{}".format(i+1): value for i, value in enumerate(input_data)}
+    for index, query in enumerate(queries):
+        useragent = getuseragent(index)
+        headers['User-Agent'] = useragent
+        print_(f"========== Account {index+1} ==========")
+        time.sleep(1)
+        data_auth = postauth(query)
+        print_(f"refresh token....")
+        time.sleep(2)
+        if data_auth is not None:
+            token = data_auth.get('access_token')
+            user = data_auth.get('user')
+            ratings = user.get('rating')
+            id = user.get('id')
+            squad_id = user.get('squad_id')
+            detail = get_detail(token, id)
+            if detail is not None:
+                ratings = detail.get('rating', 0)
+            print_(f"TGID : {user.get('id')} | Name : {user.get('first_name')} {user.get('last_name')} | point : {ratings}")
+            durev_combo(token, payload)
+
+def start():
+    print(r"""
+        
+                    MAJOR BOT
+    find new airdrop & bot here: t.me/sansxgroup
+              
+        select this one :
+        1. claim daily
+        2. clear quest game  
+          
+          """)
+    selector = input("Select the one  : ").strip().lower()
+
+    if selector == '1':
+        main()
+    elif selector == '2':
+        quest_main()
+    else:
+        exit()
+
 if __name__ == "__main__":
-    main()
+    start()
