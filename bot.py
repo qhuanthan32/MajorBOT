@@ -1,3 +1,4 @@
+import os
 import random
 import requests
 import time
@@ -14,10 +15,12 @@ headers = {
     'Accept-Encoding': 'gzip, deflate, br, zstd',
     'Accept-Language': 'en-US,en;q=0.9',
     'Content-Type': 'application/json',
-    'Origin': 'https://major.glados.app',
+    'Origin': 'https://major.bot',
     'Priority': 'u=1, i',
 }
 
+def clear_terminal():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def load_credentials():
     try:
@@ -45,7 +48,7 @@ def getuseragent(index):
         return 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36'
 
 def postauth(query):
-    url = 'https://major.glados.app/api/auth/tg/'
+    url = 'https://major.bot/api/auth/tg/'
     data = {
         'init_data': query,
     }
@@ -69,7 +72,7 @@ def postauth(query):
         return None
     
 def getdaily(token):
-    url ='https://major.glados.app/api/tasks/?is_daily=true'
+    url ='https://major.bot/api/tasks/?is_daily=true'
     headers['Authorization'] = f"Bearer {token}"
     try:
         response_codes_done = range(200, 211)
@@ -91,7 +94,7 @@ def getdaily(token):
         return None
 
 def gettask(token):
-    url ='https://major.glados.app/api/tasks/?is_daily=false'
+    url ='https://major.bot/api/tasks/?is_daily=false'
     headers['Authorization'] = f"Bearer {token}"
     try:
         trys = 3
@@ -116,12 +119,10 @@ def gettask(token):
         print_(f'Error making request: {e}')
         return None
 
-def donetask(token, id):
-    url = 'https://major.glados.app/api/tasks/'
+def donetask(token, payload):
+    url = 'https://major.bot/api/tasks/'
     headers['Authorization'] = f"Bearer {token}"
-    payload = {
-        'task_id': id
-    }
+    
     try:
         response_codes_done = range(200, 211)
         response_code_failed = range(500, 530)
@@ -142,7 +143,7 @@ def donetask(token, id):
         return None
 
 def visit(token):
-    url = 'https://major.glados.app/api/user-visits/visit/?'
+    url = 'https://major.bot/api/user-visits/visit/?'
     headers['Authorization'] = f"Bearer {token}"
     try:
         response_codes_done = range(200, 211)
@@ -164,7 +165,7 @@ def visit(token):
         return None
     
 def donate(token, amount):
-    url = 'https://major.glados.app/api/invoices/'
+    url = 'https://major.bot/api/invoices/'
     payload = {"amount":amount, 
                "buy_for_user_id":6057140648}
     headers['Authorization'] = f"Bearer {token}"
@@ -189,7 +190,7 @@ def donate(token, amount):
         return None
 
 def roulette(token):
-    url ='https://major.glados.app/api/roulette/'
+    url ='https://major.bot/api/roulette/'
     headers['Authorization'] = f"Bearer {token}"
 
     response = requests.post(url, headers=headers)
@@ -216,7 +217,7 @@ def roulette(token):
         return None
 
 def join_squad(token):
-    url = 'https://major.glados.app/api/squads/2139244595/join/?'
+    url = 'https://major.bot/api/squads/2139244595/join/?'
     headers['Authorization'] = f"Bearer {token}"
 
     response = requests.post(url, headers=headers)
@@ -239,7 +240,7 @@ def join_squad(token):
         return None
 
 def get_squad(token):
-    url = 'https://major.glados.app/api/squads/2139244595?'
+    url = 'https://major.bot/api/squads/2139244595?'
     headers['Authorization'] = f"Bearer {token}"
 
     response = requests.get(url, headers=headers)
@@ -262,7 +263,7 @@ def get_squad(token):
         return None
 
 def claim_coins(token):
-    url = 'https://major.glados.app/api/bonuses/coins/'
+    url = 'https://major.bot/api/bonuses/coins/'
     coins = 915
     payload = {"coins":coins}
     headers['Authorization'] = f"Bearer {token}"
@@ -294,7 +295,7 @@ def claim_coins(token):
         return None
 
 def swipe_coin(token):
-    url = 'https://major.glados.app/api/swipe_coin/'
+    url = 'https://major.bot/api/swipe_coin/'
     coins = 3000
     payload = {"coins":coins}
     headers['Authorization'] = f"Bearer {token}"
@@ -326,7 +327,7 @@ def swipe_coin(token):
         return None
     
 def get_detail(token, tgid):
-    url = f'https://major.glados.app/api/users/{tgid}/'
+    url = f'https://major.bot/api/users/{tgid}/'
     headers['Authorization'] = f"Bearer {token}"
     response = requests.get(url, headers=headers)
     try:
@@ -459,12 +460,19 @@ def main():
                     if len(data_daily) > 0:
                         for daily in reversed(data_daily):
                             id = daily.get('id')
+                            type = daily.get('type')
                             title = daily.get('title')
                             is_completed = daily.get('is_completed')
                             if title not in ["Donate rating", "Invite more Friends", "Boost Major channel", "Promote TON blockchain", "Stars Purchase", "Extra Stars Purchase"]:
                                 if is_completed == False:
                                     time.sleep(2)
-                                    data_done = donetask(token, id)
+                                    if type != 'code':
+                                        payload = {
+                                            'task_id': id
+                                        }
+                                        
+                                        
+                                    data_done = donetask(token, payload)
                                     if data_done is not None:
                                         print_(f"Task : {daily.get('title')} | Reward : {daily.get('award')} | Status: {data_done.get('is_completed')}")
                     else:
@@ -476,10 +484,15 @@ def main():
                     if len(data_task) > 0:
                         for task in data_task:
                             id = task.get('id')
+                            type = task.get('type')
                             title = task.get('title')
                             if title not in ["One-time Stars Purchase", "Binance x TON", "Status Purchase"]:
                                 time.sleep(2)
-                                data_done = donetask(token, id)
+                                if type != 'code':
+                                        payload = {
+                                            'task_id': id
+                                        }
+                                data_done = donetask(token, payload)
                                 if data_done is not None:
                                         print_(f"Task : {title} | Reward : {task.get('award')} | Status: {data_done.get('is_completed')}")
                     else:
@@ -518,8 +531,10 @@ def print_delay(delay):
 def quest_main():
     queries = load_credentials()
     input_string = input("input number (ex:14,2,3,4) : ").strip().lower()
-    input_data = [int(x) for x in input_string.split(",")]
-    payload = {"choice_{}".format(i+1): value for i, value in enumerate(input_data)}
+    input_youtube = input("input code from youtube : ").strip().lower()
+    if input_string != 'n':
+        input_data = [int(x) for x in input_string.split(",")]
+        payload = {"choice_{}".format(i+1): value for i, value in enumerate(input_data)}
     for index, query in enumerate(queries):
         useragent = getuseragent(index)
         headers['User-Agent'] = useragent
@@ -538,7 +553,29 @@ def quest_main():
             if detail is not None:
                 ratings = detail.get('rating', 0)
             print_(f"TGID : {user.get('id')} | Name : {user.get('first_name')} {user.get('last_name')} | point : {ratings}")
-            durev_combo(token, payload)
+            if input_string != 'n':
+                durev_combo(token, payload)
+            print_('Get Single Task')
+            data_task = gettask(token)
+            if data_task is not None:
+                if len(data_task) > 0:
+                    for task in data_task:
+                        id = task.get('id')
+                        type = task.get('type')
+                        title = task.get('title')
+                        if title not in ["One-time Stars Purchase", "Binance x TON", "Status Purchase"]:
+                            time.sleep(2)
+                            if type == 'code':
+                                    payload = {"task_id":92,"payload":{"code":input_youtube}}
+                            else:
+                                payload = {
+                                            'task_id': id
+                                        }
+                            data_done = donetask(token, payload)
+                            if data_done is not None:
+                                    print_(f"Task : {title} | Reward : {task.get('award')} | Status: {data_done.get('is_completed')}")
+            else:
+                print_('No have single task')
 
 def start():
     print(r"""
